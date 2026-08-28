@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alarm.com Sr. Mechanical Engineer — Portfolio Mock Interview</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#17202a;--muted:#667085;--line:#e5e7eb;--blue:#1769e0;--green:#16803c;--orange:#b45309}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--text)}
+header{background:#111827;color:white;padding:24px 0}.wrap{max-width:1100px;margin:auto;padding:0 20px}
+h1{margin:0 0 8px;font-size:28px}.subtitle{color:#d1d5db}
+.grid{display:grid;grid-template-columns:270px 1fr;gap:18px;margin:20px auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 3px 12px #0000000a}
+.nav button{width:100%;text-align:left;margin:5px 0}.btn{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-size:14px;background:#e9edf2}.btn.primary{background:var(--blue);color:white}.btn.green{background:var(--green);color:white}.btn.orange{background:var(--orange);color:white}
+.tags{margin:12px 0}.tag{display:inline-block;background:#eef2ff;padding:5px 9px;border-radius:15px;font-size:12px;margin:3px}
+.question{font-size:23px;line-height:1.45;margin:20px 0 12px}.source{font-size:12px;color:var(--muted)}
+.answer{white-space:pre-wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:15px;min-height:120px;margin-top:10px}
+.score{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}.score button{padding:10px 5px;border:1px solid var(--line);background:white;border-radius:8px;cursor:pointer}.score button:hover{background:#eef2ff}
+.feedback{margin-top:14px;padding:14px;border-radius:10px;background:#f0fdf4;line-height:1.5}.hidden{display:none}
+.progress{height:8px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin:10px 0}.bar{height:100%;background:var(--blue);width:0}
+.history{max-height:230px;overflow:auto;font-size:13px}.history div{padding:8px;border-bottom:1px solid var(--line)}
+ul{padding-left:20px;line-height:1.55}.small{font-size:13px;color:var(--muted);line-height:1.5}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.score{grid-template-columns:repeat(5,1fr)}}
+
+.ai-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}
+.ai-grid>div{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:9px;text-align:center;font-size:12px}
+#aiPanel{margin-top:14px;padding:16px;border-radius:12px;background:#eef6ff;border:1px solid #d7e7ff}
+.ai-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+@media(max-width:800px){.ai-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<h1>🎤 Alarm.com — Sr. Mechanical Engineer</h1>
+<div class="subtitle">Portfolio-based mock interview • American interviewer • English speaking practice</div>
+</div></header>
+
+<div class="wrap grid">
+<aside>
+<div class="card nav">
+<b>Interview mode</b>
+<button class="btn primary" onclick="setMode('all')">All Questions</button>
+<button class="btn" onclick="setMode('camera')">📷 IP Camera</button>
+<button class="btn" onclick="setMode('thermal')">🌡 Thermal</button>
+<button class="btn" onclick="setMode('manufacturing')">🏭 DFM / Manufacturing</button>
+<button class="btn" onclick="setMode('behavioral')">🗣 Behavioral</button>
+<button class="btn" onclick="setMode('portfolio')">📁 Portfolio Deep Dive</button>
+<hr>
+<button class="btn" onclick="shuffle()">🔀 Randomize</button>
+<button class="btn" onclick="resetInterview()">↺ Reset</button>
+</div>
+<div class="card">
+<b>Your portfolio highlights</b>
+<ul>
+<li>10 years mechanical design experience</li>
+<li>Synology: NAS, storage & surveillance camera</li>
+<li>IP66/IP67 design</li>
+<li>Die casting, plastic, sheet metal</li>
+<li>Thermal solution & simulation</li>
+<li>PCB placement / stacking</li>
+<li>Optical configuration</li>
+<li>Shock, vibration, corner-drop reliability</li>
+<li>Creo / SolidWorks / FloTHERM XT</li>
+</ul>
+</div>
+</aside>
+
+<main>
+<div class="card">
+<div class="source" id="counter"></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="tags" id="tags"></div>
+<div class="question" id="question"></div>
+<div class="source" id="source"></div>
+
+<div>
+<button class="btn primary" onclick="speak()">🔊 Hear Question</button>
+<button class="btn green" id="mic" onclick="toggleMic()">🎙 Start Speaking</button>
+<button class="btn orange" onclick="nextQuestion()">➡ Next Question</button>
+</div>
+
+<div class="answer" id="answer">Your spoken answer will appear here.</div>
+<div class="small">Chrome is recommended. Allow microphone access when prompted.</div>
+
+<div class="score">
+<button onclick="rate(1)">1<br>Weak</button><button onclick="rate(2)">2</button>
+<button onclick="rate(3)">3<br>OK</button><button onclick="rate(4)">4</button><button onclick="rate(5)">5<br>Strong</button>
+</div>
+<div class="feedback" id="feedback">Tip: For senior-level answers, explain your engineering trade-offs, validation method, and measurable result.</div>
+</div>
+
+<div class="card">
+<b>Interview history</b>
+<div class="history" id="history">No questions rated yet.</div>
+</div>
+
+<div class="card">
+<b>🎯 How to answer like a Senior Mechanical Engineer</b>
+<ul>
+<li><b>Situation:</b> briefly explain the product and constraint.</li>
+<li><b>Engineering approach:</b> show calculations, tolerance stack-up, thermal path, material/process selection, or test method.</li>
+<li><b>Trade-offs:</b> discuss cost, schedule, manufacturability, reliability, assembly, and performance.</li>
+<li><b>Result:</b> quantify improvement whenever your portfolio supports it.</li>
+<li><b>Collaboration:</b> mention EE/PCB, optics, thermal, supplier, factory, and QA interaction when relevant.</li>
+</ul>
+</div>
+
+<div class="card">
+<b>🤖 AI Interview Coach</b>
+<p class="small">Browser-only coaching: no API key and no answer sent to an external AI service.</p>
+<div class="ai-actions">
+<button class="btn primary" onclick="evaluateAnswer()">📊 Evaluate My Answer</button>
+<button class="btn green" onclick="aiFollowup()">🎯 Ask Follow-up</button>
+</div>
+<div id="aiPanel"><b>Ready.</b> Record an answer, then evaluate it or ask a follow-up.</div>
+</div>
+</main>
+</div>
+
+<script>
+const bank=[
+{cat:'portfolio',tag:'Introduction',src:'Portfolio p.2',q:'Could you walk me through your background and your mechanical engineering experience?',tip:'Mention your Master’s in Mechanical Engineering, about 10 years of design experience, and your progression from ThinkPad/ToughPad to NAS and surveillance cameras.'},
+{cat:'portfolio',tag:'Career',src:'Portfolio p.3',q:'I see that you worked on ThinkPad, ToughPad, and later NAS and surveillance cameras. How did your mechanical design responsibilities evolve?',tip:'Emphasize increasing system-level ownership, manufacturing, thermal, reliability, and cross-functional responsibilities.'},
+{cat:'portfolio',tag:'Skills',src:'Portfolio p.4',q:'What are your strongest mechanical engineering skills, and which one would you say is your specialty?',tip:'Connect plastic, sheet metal, die casting, tolerance, DFM, reliability, and thermal skills to real projects.'},
+{cat:'camera',tag:'IP Camera',src:'Portfolio p.5–9',q:'Can you walk me through the mechanical architecture of the 8MP IP camera you designed?',tip:'Explain die-cast/plastic structure, PCB placement, thermal solution, IP66/IP67 sealing, and optical configuration.'},
+{cat:'camera',tag:'PCB Stacking',src:'Portfolio p.6',q:'You had to fit four boards into a limited space. How did you decide the PCB stacking and mechanical interfaces?',tip:'Discuss keep-outs, connectors, serviceability, assembly sequence, tolerance, heat sources, and factory assembly.'},
+{cat:'camera',tag:'Manufacturing',src:'Portfolio p.6',q:'How did you make sure the four-board camera assembly was easy for the factory to assemble?',tip:'Talk about assembly direction, access, screw/fastener strategy, poka-yoke, part count, and tolerance.'},
+{cat:'camera',tag:'Thermal',src:'Portfolio p.7',q:'Your camera had LED, image sensor, SoC and DDR4 heat sources. How did you establish the heat-transfer path?',tip:'Explain conduction paths, thermal interfaces, heat spreading, enclosure conduction, and airflow where applicable.'},
+{cat:'camera',tag:'IP67',src:'Portfolio p.8',q:'How did you approach the IP67 design of the camera?',tip:'Discuss O-rings, silicone rubber, potting, glass dispensing, compression, tolerances, and pre-test validation.'},
+{cat:'camera',tag:'Reliability',src:'Portfolio p.8',q:'If the camera passes an initial IP67 test but fails after thermal cycling, how would you investigate the root cause?',tip:'Structure the investigation around seal compression, material CTE, gaps, warpage, adhesive/potting behavior, and leak-location evidence.'},
+{cat:'camera',tag:'Optics',src:'Portfolio p.9',q:'What mechanical factors did you consider when positioning the optics and PCB?',tip:'Mention lens position, LED view angle, PCB position, optical axis, stack-up, alignment, and tolerance.'},
+{cat:'camera',tag:'Optics',src:'Portfolio p.9',q:'How would mechanical tolerance affect image quality in an IP camera?',tip:'Discuss lens tilt/decenter, focus position, optical axis shift, sensor-to-lens distance, thermal expansion, and stack-up.'},
+{cat:'thermal',tag:'Thermal',src:'Portfolio p.10–12',q:'Your Visual Station evolved from fan cooling to a fanless design. What were the main engineering challenges?',tip:'Discuss heatsink size, airflow openings, PCBA relocation, assembly, thermal simulation, and EMI trade-offs.'},
+{cat:'thermal',tag:'Thermal',src:'Portfolio p.11–12',q:'How would you determine whether a fanless thermal solution is feasible before building prototypes?',tip:'Explain power budget, thermal resistance targets, heat path assumptions, simulation, boundary conditions, and prototype correlation.'},
+{cat:'thermal',tag:'Simulation',src:'Portfolio p.12',q:'How do you use thermal simulation, and how do you validate the simulation results?',tip:'Describe model assumptions, material/contact resistance, power inputs, boundary conditions, and correlation with thermocouples or test data.'},
+{cat:'thermal',tag:'EMI',src:'Portfolio p.12',q:'Your fanless design also had an EMI issue. How would you balance thermal and EMI requirements?',tip:'Explain venting versus shielding, enclosure continuity, grounding, shield structures, and cross-functional validation.'},
+{cat:'thermal',tag:'NAS',src:'Portfolio p.16',q:'Your 12-bay NAS thermal design increased the thermal load from 25W to 45W. What was your solution strategy?',tip:'Use the portfolio result: new heatsink, aluminum block to the bottom, windshield, and more ventilation holes.'},
+{cat:'thermal',tag:'NAS Result',src:'Portfolio p.16',q:'Your slide shows a reduction from about 90°C to 68°C at 25°C ambient. Which design changes contributed most, and how did you verify them?',tip:'The slide attributes approximately -13°C to the new heatsink, -4°C to the aluminum block, -1°C to the windshield, and -4°C to additional air holes.'},
+{cat:'manufacturing',tag:'DFM',src:'Portfolio p.4–5',q:'How do you apply DFM when designing die-cast and injection-molded parts?',tip:'Cover draft, wall thickness, ribs, bosses, shrinkage, warpage, parting line, machining needs, and tooling constraints.'},
+{cat:'manufacturing',tag:'Tolerance',src:'Portfolio p.4,18',q:'How do you perform tolerance analysis for a sliding mechanism such as the 2U Duo Controller?',tip:'Discuss functional dimensions, stack-up direction, worst-case/RSS as appropriate, clearance, friction, and validation.'},
+{cat:'manufacturing',tag:'Rack',src:'Portfolio p.18',q:'How did you make sure the 2U Duo Controller could slide in accurately without sticking?',tip:'Discuss rail alignment, stacking tolerance, insertion guidance, clearance, deformation, and airflow constraints.'},
+{cat:'manufacturing',tag:'Assembly',src:'Portfolio p.18',q:'How would you design a mechanism so a customer can insert and remove it easily while preventing incorrect insertion?',tip:'Discuss lead-ins, guide rails, asymmetric features, stops, latch behavior, and tolerance robustness.'},
+{cat:'manufacturing',tag:'Sheet Metal',src:'Portfolio p.13–15',q:'Tell me about your experience with sheet-metal chassis and rack-station design.',tip:'Mention bend strategy, stack-up, stiffness, serviceability, tray slides, airflow, and manufacturability.'},
+{cat:'manufacturing',tag:'Surface Finish',src:'Portfolio p.14',q:'What mechanical considerations are important for painted and laser-engraved parts?',tip:'Mention surface preparation, masking, dimensional buildup, appearance requirements, engraving depth/location, and process capability.'},
+{cat:'portfolio',tag:'Reliability',src:'Portfolio p.4',q:'What reliability tests have you been involved with, and how do you use the results to improve a design?',tip:'Use shock, vibration, and corner drop as examples; explain failure analysis and design iteration.'},
+{cat:'behavioral',tag:'Problem Solving',src:'Portfolio projects',q:'Tell me about a difficult mechanical problem you solved. What was your approach?',tip:'Use one project and structure the answer as Situation → Root Cause → Action → Result.'},
+{cat:'behavioral',tag:'Cross-functional',src:'Portfolio p.12',q:'How do you work with electrical engineers, PCB designers, thermal engineers, optics engineers, and suppliers?',tip:'Show how you align interfaces, requirements, ownership, validation, and schedule.'},
+{cat:'behavioral',tag:'Conflict',src:'Portfolio p.20',q:'You worked across Taiwan and Japan. Tell me about a time you had to resolve a communication or engineering expectation gap.',tip:'Focus on objective requirements, drawings, tolerances, evidence, and communication rather than personalities.'},
+{cat:'behavioral',tag:'Senior Level',src:'Portfolio p.21',q:'What do you think is the difference between a good mechanical engineer and a senior mechanical engineer?',tip:'Discuss system ownership, risk management, trade-offs, mentoring, supplier/manufacturing understanding, and decision quality.'},
+{cat:'behavioral',tag:'Alarm.com',src:'Portfolio p.21',q:'Why do you want to join Alarm.com?',tip:'Your portfolio states interest in IoT/IP products, technology leadership, innovative design, and career growth. Connect these to your camera experience.'},
+{cat:'behavioral',tag:'Improvement',src:'Portfolio p.21',q:'What is one area of your engineering approach that you want to improve?',tip:'Your portfolio identifies work efficiency in short lead times and a more comprehensive design/manufacturing concept. Explain a concrete improvement plan.'},
+{cat:'behavioral',tag:'English Follow-up',src:'Portfolio p.21',q:'If I challenged one of your design decisions, how would you defend it?',tip:'Do not become defensive. Explain requirements, data, assumptions, trade-offs, validation, and what evidence could change your decision.'}
+];
+
+let questions=[...bank], idx=0, listening=false, rec=null, ratings=[];
+
+function render(){
+ const x=questions[idx]; document.getElementById('counter').textContent=`Question ${idx+1} of ${questions.length}`;
+ document.getElementById('bar').style.width=((idx+1)/questions.length*100)+'%';
+ document.getElementById('question').textContent=x.q;
+ document.getElementById('source').textContent='Portfolio reference: '+x.src;
+ document.getElementById('tags').innerHTML=`<span class="tag">${x.tag}</span><span class="tag">${x.cat}</span>`;
+ document.getElementById('answer').textContent='Your spoken answer will appear here.';
+ document.getElementById('feedback').textContent='💡 '+x.tip;
+}
+function speak(){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(questions[idx].q);u.lang='en-US';u.rate=.9;speechSynthesis.speak(u)}
+function toggleMic(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){alert('Speech recognition is not supported here. Please use Google Chrome.');return}
+ if(listening){rec.stop();return}
+ rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=true;
+ rec.onstart=()=>{listening=true;document.getElementById('mic').textContent='⏹ Stop Speaking'}
+ rec.onend=()=>{listening=false;document.getElementById('mic').textContent='🎙 Start Speaking'}
+ rec.onresult=e=>{let text='';for(let j=e.resultIndex;j<e.results.length;j++)text+=e.results[j][0].transcript+' ';document.getElementById('answer').textContent=text.trim()}
+ rec.start()
+}
+function nextQuestion(){idx=(idx+1)%questions.length;render();speak()}
+function setMode(mode){questions=mode==='all'?[...bank]:bank.filter(x=>x.cat===mode);if(!questions.length)questions=[...bank];idx=0;render()}
+function shuffle(){for(let i=questions.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[questions[i],questions[j]]=[questions[j],questions[i]]}idx=0;render()}
+function rate(n){ratings.push({q:questions[idx].q,r:n});document.getElementById('history').innerHTML=ratings.slice(-20).reverse().map(x=>`<div>⭐ ${x.r}/5 — ${x.q}</div>`).join('');}
+function resetInterview(){questions=[...bank];idx=0;ratings=[];document.getElementById('history').textContent='No questions rated yet.';render()}
+render();
+
+const aiFollowups={
+thermal:["You mentioned the heatsink. How did you determine the required thermal resistance?","What assumptions did you use in your thermal simulation, and how did you correlate the model with test data?","If the prototype was 8°C hotter than simulation, what would you check first?"],
+camera:["How did you control lens position and optical alignment through mechanical tolerances?","How would you investigate image-quality variation after thermal cycling?","What trade-off did you make between mechanical structure, sealing, and manufacturability?"],
+ip67:["How did you control O-ring compression and tolerance stack-up?","If an IP67 test failed intermittently, how would you isolate the leak location?","How would material CTE and enclosure deformation affect the sealing design?"],
+manufacturing:["What DFM risks did you identify before tooling?","How did you decide which dimensions needed tight tolerances?","How would you work with a supplier if the first tooling trial failed?"],
+tolerance:["Would you use worst-case or RSS tolerance analysis here, and why?","Which dimensions are function-critical in this stack-up?","How would you validate the tolerance model with physical builds?"],
+behavioral:["What was your specific contribution?","What alternatives did you consider before choosing that solution?","What was the measurable result?"],
+portfolio:["What was the most difficult engineering constraint in this project?","What would you redesign if you had another development cycle?","How did you prove that your final design was robust?"]
+};
+function aiCat(q){
+ let s=q.toLowerCase();
+ if(/thermal|heatsink|fanless|45w/.test(s))return"thermal";
+ if(/camera|lens|optical|image quality/.test(s))return"camera";
+ if(/ip67|ip66|o-ring|seal/.test(s))return"ip67";
+ if(/tolerance|stack/.test(s))return"tolerance";
+ if(/dfm|manufactur|supplier|assembly/.test(s))return"manufacturing";
+ if(/tell me|why do you|difference|conflict/.test(s))return"behavioral";
+ return"portfolio";
+}
+function evaluateAnswer(){
+ let t=document.getElementById("answer").textContent.trim();
+ if(!t||t==="Your spoken answer will appear here."){document.getElementById("aiPanel").innerHTML="<b>Please record an answer first.</b>";return;}
+ let w=t.split(/\s+/).length,s=t.toLowerCase();
+ let tech=["tolerance","gd&t","dfm","dfa","thermal","heatsink","cte","ip67","ip66","o-ring","seal","pcb","lens","optical","alignment","stack-up","simulation","validation","supplier","factory","assembly","warpage","die casting","sheet metal","plastic","injection","reliability","vibration","drop","root cause","airflow","emi","conduction","convection"].filter(x=>s.includes(x)).length;
+ let senior=["trade-off","tradeoff","risk","requirement","data","validation","result","cost","schedule","cross-functional","customer","manufacturing","root cause"].filter(x=>s.includes(x)).length;
+ let structure=["first","second","then","because","therefore","finally","result","however"].filter(x=>s.includes(x)).length;
+ let scores={grammar:Math.min(10,w<20?4:w<45?6:w<90?8:9),fluency:Math.min(10,w<20?4:w<40?6:w<75?8:9),technical:Math.min(10,4+tech),senior:Math.min(10,4+senior),structure:Math.min(10,5+structure)};
+ let overall=((scores.grammar+scores.fluency+scores.technical+scores.senior+scores.structure)/5).toFixed(1);
+ let fb=[];
+ if(w<45)fb.push("Aim for about 60–90 seconds for a senior-level answer.");
+ if(scores.technical<7)fb.push("Add engineering evidence: requirements, calculations, tolerances, simulation, or validation.");
+ if(scores.senior<7)fb.push("Explain your ownership and trade-offs between cost, schedule, reliability, and manufacturability.");
+ if(scores.structure<7)fb.push("Use Situation → Constraint → Action → Validation → Result.");
+ if(!/result|improv|reduce|increase|decrease|°c|\\bw\\b|%/.test(s))fb.push("Quantify the result when possible.");
+ if(!fb.length)fb.push("Strong answer. Be ready to defend assumptions with data.");
+ document.getElementById("aiPanel").innerHTML="<h3>🤖 Interview Coach</h3><div class='ai-grid'>"+Object.entries(scores).map(([k,v])=>"<div>"+k+"<br><b>"+v+"/10</b></div>").join("")+"</div><p><b>Overall: "+overall+"/10</b></p><ul>"+fb.map(x=>"<li>"+x+"</li>").join("")+"</ul>";
+}
+function aiFollowup(){
+ let t=document.getElementById("answer").textContent.trim(), pool=aiFollowups[aiCat(document.getElementById("question").textContent)]||aiFollowups.portfolio;
+ let q=pool[Math.floor(Math.random()*pool.length)];
+ if(t.toLowerCase().includes("simulation")&&aiCat(document.getElementById("question").textContent)==="thermal")q="You mentioned thermal simulation. What boundary conditions and material/contact assumptions did you use?";
+ document.getElementById("question").textContent=q;
+ document.getElementById("source").textContent="Adaptive follow-up based on your previous answer";
+ document.getElementById("answer").textContent="Your spoken answer will appear here.";
+ document.getElementById("feedback").textContent="🎯 Answer directly, then support your decision with engineering evidence.";
+ speak();
+}
+</script>
+</body>
+</html>
