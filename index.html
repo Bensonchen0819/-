@@ -219,15 +219,15 @@ function publicState(forRole){const opp=forRole==='host'?'guest':'host';return {
 function sync(){if(conn&&state){conn.send({type:'state',host:publicState('host'),guest:publicState('guest')})}}
 function hostReceive(m){if(m.type==='action')applyAction('guest',m.action)}
 function guestReceive(m){if(m.type==='state'){state=m.guest;render()}else if(m.type==='effect'){showSkillEffect(m.attacker,m.damage,m.skill,m.cardId,m.skillIndex,m.kind||'attack')}}
-function sendAction(a){if(!state)return;if(aiMode){if(role==='host')applyAction('host',a);return}if(!conn)return;if(role==='host')applyAction('host',a);else conn.send({type:'action',action:a})}
+function sendAction(a){if(!state)return;if(window.__duelAudio)window.__duelAudio.action(a);if(aiMode){if(role==='host')applyAction('host',a);return}if(!conn)return;if(role==='host')applyAction('host',a);else conn.send({type:'action',action:a})}
 function applyAction(who,a){if(!state||state.gameOver||state.turn!==who)return;const opp=who==='host'?'guest':'host';
  if(a.type==='draw'){const handCount=state.hands[who].length;if(handCount>=3||state.drawUsed[who]>=3||!state.decks[who].length)return;state.hands[who].push(state.decks[who].shift());state.drawUsed[who]++;log((who==='host'?'你':'對手')+' 抽了 1 張牌（手牌 '+state.hands[who].length+'/3）');sync();render();return}
  if(a.type==='play'){if(state.active[who]||!state.hands[who].length)return;const i=a.index;if(!Number.isInteger(i)||i<0||i>=state.hands[who].length)return;const id=state.hands[who].splice(i,1)[0];state.active[who]={id,hp:1000};log((who==='host'?'你':'對手')+' 出牌：「'+CARD[id].name+'」');endTurn(who);sync();render();return}
  if(a.type==='normal'){if(!state.active[who])return;attack(who,opp,300,false);endTurn(who)}
  if(a.type==='pass'){if(!state.active[who])return;state.energy[who]=Math.min(5,state.energy[who]+1);log((who==='host'?'你':'對手')+' 放棄攻擊，能量 +1');endTurn(who)}
- if(a.type==='skill'){if(!state.active[who])return;const sk=CARD[state.active[who].id].skills[a.index];if(!sk||state.energy[who]<sk[2])return;const cid=state.active[who].id;state.energy[who]-=sk[2];if(sk[4]=== 'def'){state.def[who]=sk[3];showSkillEffect(who,0,true,cid,a.index,'def');if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:0,skill:true,cardId:cid,skillIndex:a.index,kind:'def'});log((who==='host'?'你':'對手')+' 使用防禦技能「'+sk[0]+'」')}else if(sk[4]){state.buff[who]=sk[4];showSkillEffect(who,0,true,cid,a.index,'buff');if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:0,skill:true,cardId:cid,skillIndex:a.index,kind:'buff'});log((who==='host'?'你':'對手')+' 使用 Buff「'+sk[0]+'」')}else{attack(who,opp,sk[1],true,a.index,cid)}endTurn(who)}
+ if(a.type==='skill'){if(!state.active[who])return;const sk=CARD[state.active[who].id].skills[a.index];if(!sk||state.energy[who]<sk[2])return;const cid=state.active[who].id;if(window.__duelAudio)window.__duelAudio.skill(cid,a.index);state.energy[who]-=sk[2];if(sk[4]=== 'def'){state.def[who]=sk[3];showSkillEffect(who,0,true,cid,a.index,'def');if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:0,skill:true,cardId:cid,skillIndex:a.index,kind:'def'});log((who==='host'?'你':'對手')+' 使用防禦技能「'+sk[0]+'」')}else if(sk[4]){state.buff[who]=sk[4];showSkillEffect(who,0,true,cid,a.index,'buff');if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:0,skill:true,cardId:cid,skillIndex:a.index,kind:'buff'});log((who==='host'?'你':'對手')+' 使用 Buff「'+sk[0]+'」')}else{attack(who,opp,sk[1],true,a.index,cid)}endTurn(who)}
  sync();render()}
-function attack(who,opp,raw,isSkill,skillIndex=-1,cardId=''){const mult=state.buff[who]||1;const dmg=Math.round(raw*mult);state.buff[who]=1;let final=dmg;if(state.def[opp]!==1){final=Math.round(dmg*state.def[opp]);state.def[opp]=1}const t=state.active[opp];if(t){const overflow=Math.max(0,final-t.hp);t.hp=Math.max(0,t.hp-final);if(t.hp===0)state.active[opp]=null;if(overflow)state.lp[opp]=Math.max(0,state.lp[opp]-overflow)}else state.lp[opp]=Math.max(0,state.lp[opp]-final);showSkillEffect(who,final,isSkill,cardId,skillIndex);if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:final,skill:isSkill,cardId:cardId,skillIndex:skillIndex});log((who==='host'?'你':'對手')+' 造成 '+final+' 傷害');if(state.lp[opp]<=0)state.gameOver=true}
+function attack(who,opp,raw,isSkill,skillIndex=-1,cardId=''){const mult=state.buff[who]||1;const dmg=Math.round(raw*mult);state.buff[who]=1;let final=dmg;if(window.__duelAudio)window.__duelAudio.tone(isSkill?'skill':'hit');if(state.def[opp]!==1){final=Math.round(dmg*state.def[opp]);state.def[opp]=1}const t=state.active[opp];if(t){const overflow=Math.max(0,final-t.hp);t.hp=Math.max(0,t.hp-final);if(t.hp===0)state.active[opp]=null;if(overflow)state.lp[opp]=Math.max(0,state.lp[opp]-overflow)}else state.lp[opp]=Math.max(0,state.lp[opp]-final);showSkillEffect(who,final,isSkill,cardId,skillIndex);if(conn&&!aiMode)conn.send({type:'effect',attacker:who,damage:final,skill:isSkill,cardId:cardId,skillIndex:skillIndex});log((who==='host'?'你':'對手')+' 造成 '+final+' 傷害');if(state.lp[opp]<=0)state.gameOver=true}
 function endTurn(who){if(state.gameOver)return;const opp=who==='host'?'guest':'host';state.turn=opp;state.drawUsed[opp]=0;selected=-1;log('輪到 '+(opp==='host'?'你':'AI')+'：可抽最多 3 張');if(aiMode&&opp==='guest')scheduleAI()}
 function scheduleAI(){clearTimeout(aiTimer);aiTimer=setTimeout(runAI,700)}
 function runAI(){if(!aiMode||!state||state.gameOver||state.turn!=='guest')return;const who='guest',opp='host';let n=Math.min(3-state.drawUsed[who],3-state.hands[who].length,state.decks[who].length);for(let i=0;i<n;i++){state.hands[who].push(state.decks[who].shift());state.drawUsed[who]++}if(n)log('AI 自動抽 '+n+' 張');render();setTimeout(()=>{if(!state||state.gameOver||state.turn!=='guest')return;if(!state.active[who]&&state.hands[who].length){const i=Math.floor(Math.random()*state.hands[who].length);const id=state.hands[who].splice(i,1)[0];state.active[who]={id,hp:1000};log('AI 出牌：「'+CARD[id].name+'」');endTurn(who);render();return}const c=state.active[who]?CARD[state.active[who].id]:null;if(!c){endTurn(who);render();return}const affordable=c.skills.map((s,i)=>({s,i})).filter(x=>state.energy[who]>=x.s[2]);let pick=affordable.find(x=>x.s[1]>0)||affordable[0];if(pick){state.energy[who]-=pick.s[2];const s=pick.s;if(s[4]==='def'){state.def[who]=s[3];showSkillEffect(who,0,true,state.active[who].id,pick.i,'def');log('AI 使用防禦技能「'+s[0]+'」')}else if(s[4]){state.buff[who]=s[4];showSkillEffect(who,0,true,state.active[who].id,pick.i,'buff');log('AI 使用 Buff「'+s[0]+'」')}else attack(who,opp,s[1],true,pick.i,state.active[who].id)}else{state.energy[who]=Math.min(5,state.energy[who]+1);log('AI 放棄攻擊，能量 +1')}endTurn(who);render()},700)}
@@ -321,5 +321,61 @@ function renderCollection(){const tabs=document.getElementById('tabs');const cou
 let colTimer=null,colLong=false;function colDown(e,id){if(e.button!==undefined&&e.button!==0)return;colLong=false;clearTimeout(colTimer);colTimer=setTimeout(()=>{colLong=true;openModal(id)},2000)}function colUp(e){clearTimeout(colTimer)}
 renderCollection();
 setStatus('尚未開始｜可建立房間、加入房間或跟 AI 玩');
+
+<!-- V4 AUDIO SYSTEM: original game SFX + browser TTS placeholders; no real-person voice imitation -->
+<script>
+(function(){
+  let ac=null, master=null, audioUnlocked=false;
+  const voiceLang='zh-TW';
+  const skillVoices={
+    'ma':['死亡之握','演講時狂咳嗽','學原住民叫'],'tsai':['0到6歲國家一起養','守護台灣','堅定向前'],
+    'chen':['一邊一國','台灣入聯','團結出擊'],'lai':['團結台灣','壯大國家','民主和平繁榮'],
+    'ko':['兩岸一家親','一五新觀點','民眾黨突襲'],'han':['高雄發大財','我是賣菜郎','滷肉飯能量'],
+    'hou':['侯侯做代誌','穩健出擊','穩中求進'],'wang':['朝野協商','溫和調和','摸糖傳承'],
+    'zhu':['一中各表','創造性模糊','求同尊異'],'shen':['認知作戰','黑熊出擊','資訊防禦'],
+    'hsieh_chang':['台日友好','國際縱橫','文化交流'],'lu':['票投改革','女力爆起','民主深化'],
+    'li_sichuan':['工程治理','都市建設','建設加速'],'guo':['科技製造','AI伺服器','產業升級'],
+    'wang_yichuan':['數據分析','交通改革','監視器全開'],'hsu':['爆料揭弊','網路戰力','議題操作'],
+    'miao':['犀利質詢','多元包容','世代改革'],'kao':['港湖連線','親民形象','網路魅力'],
+    'ye':['議題操作','戰鬥發言','媒體聲量'],'chen_baiwei':['3Q精神','草根力量','本土意識'],
+    'hsieh_long':['台南戰將','草根力量','本土意識']
+  };
+  window.__duelAudio={
+    unlock(){
+      try{
+        if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=.55; master.connect(ac.destination);}
+        if(ac.state==='suspended') ac.resume(); audioUnlocked=true;
+        document.documentElement.classList.add('audio-on');
+        return true;
+      }catch(e){return false;}
+    },
+    tone(type='ui'){
+      if(!audioUnlocked) this.unlock(); if(!ac||!master)return;
+      const now=ac.currentTime, o=ac.createOscillator(), g=ac.createGain();
+      const cfg={ui:[520,.06,'sine'],draw:[760,.09,'triangle'],card:[330,.13,'square'],hit:[90,.18,'sawtooth'],slash:[180,.12,'sawtooth'],skill:[260,.24,'triangle'],win:[660,.4,'sine'],lose:[180,.45,'sine']}[type]||[440,.1,'sine'];
+      o.type=cfg[2]; o.frequency.setValueAtTime(cfg[0],now); o.frequency.exponentialRampToValueAtTime(Math.max(40,cfg[0]*.55),now+cfg[1]);
+      g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(.18,now+.008); g.gain.exponentialRampToValueAtTime(.0001,now+cfg[1]);
+      o.connect(g);g.connect(master);o.start(now);o.stop(now+cfg[1]+.02);
+    },
+    skill(cardId,index){
+      this.tone('skill');
+      const name=(skillVoices[cardId]&&skillVoices[cardId][index])||'';
+      if(!name || !('speechSynthesis' in window) || !audioUnlocked)return;
+      try{
+        speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(name); u.lang=voiceLang; u.rate=.88; u.pitch=1.0; u.volume=.9;
+        speechSynthesis.speak(u);
+      }catch(e){}
+    },
+    action(a){
+      if(!a)return; if(a.type==='draw')this.tone('draw'); else if(a.type==='play')this.tone('card'); else if(a.type==='normal')this.tone('slash'); else if(a.type==='pass')this.tone('ui');
+    }
+  };
+  const unlock=()=>window.__duelAudio.unlock();
+  ['pointerdown','touchstart','click'].forEach(ev=>window.addEventListener(ev,unlock,{once:true,passive:true}));
+  window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.__duelAudio.unlock()});
+})();
 </script>
+</script>
+<button id="audioToggleV4" type="button" aria-label="音效" style="position:fixed;right:10px;bottom:10px;z-index:9999;border:1px solid rgba(255,215,120,.55);background:rgba(20,15,8,.88);color:#ffd66b;border-radius:999px;padding:9px 12px;font-size:14px;box-shadow:0 3px 12px rgba(0,0,0,.35);touch-action:manipulation">🔊 音效</button>
+<script>(function(){const b=document.getElementById('audioToggleV4');if(!b)return;let on=true;b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(window.__duelAudio)window.__duelAudio.unlock();on=!on;b.textContent=on?'🔊 音效':'🔇 靜音';if(window.__duelAudio&&window.__duelAudio.setMuted)window.__duelAudio.setMuted(!on);});})();</script>
 </body></html>
