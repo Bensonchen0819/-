@@ -115,9 +115,78 @@ function img(id){return IMG[id]}
 function newDeck(){return [...CARDS.map(c=>c.id)].sort(()=>Math.random()-.5)}
 function setStatus(s){document.getElementById('statusline').textContent=s}
 function log(s){const el=document.getElementById('log');const p=document.createElement('p');p.textContent=s;el.appendChild(p);el.scrollTop=el.scrollHeight}
-function createRoom(){aiMode=false;role='host';if(peer)peer.destroy();peer=new Peer();peer.on('open',id=>{roomId=id.slice(-6).toUpperCase();setStatus('房間碼：'+roomId+'｜等待對手');});peer.on('connection',c=>{conn=c;bindConn();startGame()});peer.on('error',e=>setStatus('連線錯誤：'+e.type))}
-function joinRoom(){aiMode=false;const code=document.getElementById('roomInput').value.trim().toUpperCase();if(!code)return;if(peer)peer.destroy();roomId=code;role='guest';peer=new Peer();peer.on('open',()=>{conn=peer.connect('twduel-'+roomId,{reliable:true});bindConn()});peer.on('error',e=>setStatus('加入失敗：'+e.type))}
-function bindConn(){if(!conn)return;conn.on('open',()=>{if(role==='host')setStatus('對手已連線｜遊戲開始');else setStatus('已加入房間｜等待房主同步')});conn.on('data',m=>{if(role==='host')hostReceive(m);else guestReceive(m)});conn.on('close',()=>setStatus('對手已離線'))}
+function createRoom(){
+  aiMode=false; role='host';
+  if(peer) peer.destroy();
+  if(conn) { try{conn.close()}catch(e){} conn=null; }
+
+  roomId=Math.random().toString(36).slice(2,8).toUpperCase();
+  const peerId='twduel-'+roomId;
+  peer=new Peer(peerId);
+
+  peer.on('open',()=>{
+    setStatus('房間碼：'+roomId+'｜等待對手');
+  });
+
+  peer.on('connection',c=>{
+    if(conn){ try{c.close()}catch(e){} return; }
+    conn=c;
+    bindConn();
+  });
+
+  peer.on('error',e=>{
+    setStatus('連線錯誤：'+e.type+'｜請重新建立房間');
+  });
+}
+
+function joinRoom(){
+  aiMode=false;
+  const code=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(!code) return;
+
+  if(peer) peer.destroy();
+  if(conn) { try{conn.close()}catch(e){} conn=null; }
+
+  roomId=code;
+  role='guest';
+  peer=new Peer();
+
+  peer.on('open',()=>{
+    conn=peer.connect('twduel-'+roomId,{reliable:true});
+    bindConn();
+    setStatus('正在連線到房間 '+roomId+'…');
+  });
+
+  peer.on('error',e=>{
+    setStatus('加入失敗：'+e.type+'｜請確認房間碼及房主仍在線');
+  });
+}
+
+function bindConn(){
+  if(!conn) return;
+
+  conn.on('open',()=>{
+    if(role==='host'){
+      setStatus('對手已連線｜遊戲開始');
+      startGame();
+    }else{
+      setStatus('已加入房間｜等待房主同步');
+    }
+  });
+
+  conn.on('data',m=>{
+    if(role==='host') hostReceive(m);
+    else guestReceive(m);
+  });
+
+  conn.on('close',()=>{
+    setStatus('對手已離線');
+  });
+
+  conn.on('error',e=>{
+    setStatus('資料連線錯誤：'+(e.type||'unknown'));
+  });
+}
 function copyRoom(){if(!roomId)return;navigator.clipboard?.writeText(roomId);setStatus('房間碼已複製：'+roomId)}
 function startGame(){aiMode=false;const d1=newDeck(),d2=newDeck();state={turn:'host',lp:{host:2000,guest:2000},hands:{host:[],guest:[]},decks:{host:d1,guest:d2},active:{host:null,guest:null},energy:{host:0,guest:0},buff:{host:1,guest:1},def:{host:1,guest:1},drawUsed:{host:0,guest:0},gameOver:false};selected=-1;log('遊戲開始：雙方 0 張手牌，先抽卡最多 3 張；出牌立即結束回合。');sync();render()}
 function startAI(){aiMode=true;role='host';roomId='AI';if(peer)peer.destroy();peer=null;conn=null;const d1=newDeck(),d2=newDeck();state={turn:'host',lp:{host:2000,guest:2000},hands:{host:[],guest:[]},decks:{host:d1,decks:[],guest:d2},active:{host:null,guest:null},energy:{host:0,guest:0},buff:{host:1,guest:1},def:{host:1,guest:1},drawUsed:{host:0,guest:0},gameOver:false};delete state.decks.decks;selected=-1;setStatus('🤖 AI 對戰｜你先手');log('AI 對戰開始：雙方 0 張手牌，你先抽卡。');render()}
