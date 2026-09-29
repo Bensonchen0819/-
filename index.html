@@ -115,78 +115,103 @@ function img(id){return IMG[id]}
 function newDeck(){return [...CARDS.map(c=>c.id)].sort(()=>Math.random()-.5)}
 function setStatus(s){document.getElementById('statusline').textContent=s}
 function log(s){const el=document.getElementById('log');const p=document.createElement('p');p.textContent=s;el.appendChild(p);el.scrollTop=el.scrollHeight}
+function peerErrorText(e){
+  const t=e&&e.type?e.type:'unknown';
+  const map={
+    'peer-unavailable':'找不到房間：房主可能已關閉頁面或房間碼錯誤',
+    'unavailable-id':'房間碼衝突，請重新建立房間',
+    'network':'無法連到 PeerJS 信令伺服器，請確認網路',
+    'socket-error':'信令連線失敗',
+    'socket-closed':'信令連線被關閉',
+    'webrtc':'WebRTC 連線失敗，可能是目前網路/NAT 限制',
+    'browser-incompatible':'瀏覽器不支援必要的 WebRTC 功能'
+  };
+  return (map[t]||('連線錯誤：'+t));
+}
+function makePeer(id){
+  return id ? new Peer(id,{debug:2,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'}]}})
+             : new Peer({debug:2,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'}]}});
+}
 function createRoom(){
-  aiMode=false; role='host';
-  if(peer) peer.destroy();
-  if(conn) { try{conn.close()}catch(e){} conn=null; }
-
-  roomId=Math.random().toString(36).slice(2,8).toUpperCase();
+  aiMode=false; role='host'; selected=-1;
+  if(conn){try{conn.close()}catch(e){} conn=null;}
+  if(peer){try{peer.destroy()}catch(e){}}
+  // 8 字元房間碼，避免短 ID 衝突；此 ID 同時就是 PeerJS broker ID。
+  roomId=Math.random().toString(36).slice(2,10).toUpperCase();
   const peerId='twduel-'+roomId;
-  peer=new Peer(peerId);
-
+  setStatus('正在建立房間 '+roomId+'…');
+  peer=makePeer(peerId);
   peer.on('open',()=>{
     setStatus('房間碼：'+roomId+'｜等待對手');
+    log('房主已連上信令伺服器：'+peer.id);
   });
-
   peer.on('connection',c=>{
-    if(conn){ try{c.close()}catch(e){} return; }
+    if(conn && conn.open){try{c.close()}catch(e){} return;}
     conn=c;
+    setStatus('收到對手連線請求…');
     bindConn();
   });
-
   peer.on('error',e=>{
-    setStatus('連線錯誤：'+e.type+'｜請重新建立房間');
+    setStatus(peerErrorText(e));
+    log('PeerJS：'+(e&&e.type||'unknown')+(e&&e.message?'｜'+e.message:''));
   });
+  peer.on('disconnected',()=>setStatus('信令伺服器連線中斷，正在嘗試恢復…'));
+  peer.on('close',()=>{if(!aiMode)setStatus('房間已關閉');});
 }
-
 function joinRoom(){
-  aiMode=false;
+  aiMode=false; role='guest'; selected=-1;
   const code=document.getElementById('roomInput').value.trim().toUpperCase();
-  if(!code) return;
-
-  if(peer) peer.destroy();
-  if(conn) { try{conn.close()}catch(e){} conn=null; }
-
+  if(!code){setStatus('請先輸入房間碼');return;}
+  if(conn){try{conn.close()}catch(e){} conn=null;}
+  if(peer){try{peer.destroy()}catch(e){}}
   roomId=code;
-  role='guest';
-  peer=new Peer();
-
+  setStatus('正在連線到房間 '+roomId+'…');
+  peer=makePeer();
+  if(window.__duelJoinTimeout) clearTimeout(window.__duelJoinTimeout);
+  window.__duelJoinTimeout=setTimeout(()=>{
+    if(!conn || !conn.open){
+      setStatus('連線逾時｜請確認房主頁面仍開啟，或兩邊網路限制了 WebRTC');
+      log('15 秒內未建立 DataConnection。');
+    }
+  },15000);
   peer.on('open',()=>{
-    conn=peer.connect('twduel-'+roomId,{reliable:true});
+    log('你的 Peer ID：'+peer.id+'｜開始尋找房主');
+    conn=peer.connect('twduel-'+roomId,{reliable:true,serialization:'json'});
     bindConn();
-    setStatus('正在連線到房間 '+roomId+'…');
+    setStatus('已找到房間｜正在建立 P2P 連線…');
   });
-
   peer.on('error',e=>{
-    setStatus('加入失敗：'+e.type+'｜請確認房間碼及房主仍在線');
+    if(window.__duelJoinTimeout) clearTimeout(window.__duelJoinTimeout);
+    setStatus(peerErrorText(e));
+    log('PeerJS：'+(e&&e.type||'unknown')+(e&&e.message?'｜'+e.message:''));
   });
+  peer.on('disconnected',()=>setStatus('信令伺服器連線中斷'));
 }
-
 function bindConn(){
   if(!conn) return;
-
   conn.on('open',()=>{
+    if(window.__duelConnectTimer){clearTimeout(window.__duelConnectTimer);window.__duelConnectTimer=null;}
     if(role==='host'){
       setStatus('對手已連線｜遊戲開始');
+      log('P2P DataConnection 已建立');
       startGame();
     }else{
       setStatus('已加入房間｜等待房主同步');
+      log('P2P DataConnection 已建立');
+      if(window.__duelJoinTimeout){clearTimeout(window.__duelJoinTimeout);window.__duelJoinTimeout=null;}
     }
   });
-
   conn.on('data',m=>{
     if(role==='host') hostReceive(m);
     else guestReceive(m);
   });
-
-  conn.on('close',()=>{
-    setStatus('對手已離線');
-  });
-
+  conn.on('close',()=>setStatus('對手已離線'));
   conn.on('error',e=>{
-    setStatus('資料連線錯誤：'+(e.type||'unknown'));
+    setStatus('資料連線失敗：'+(e&&e.type||'unknown'));
+    log('DataConnection：'+(e&&e.type||'unknown')+(e&&e.message?'｜'+e.message:''));
   });
 }
+
 function copyRoom(){if(!roomId)return;navigator.clipboard?.writeText(roomId);setStatus('房間碼已複製：'+roomId)}
 function startGame(){aiMode=false;const d1=newDeck(),d2=newDeck();state={turn:'host',lp:{host:2000,guest:2000},hands:{host:[],guest:[]},decks:{host:d1,guest:d2},active:{host:null,guest:null},energy:{host:0,guest:0},buff:{host:1,guest:1},def:{host:1,guest:1},drawUsed:{host:0,guest:0},gameOver:false};selected=-1;log('遊戲開始：雙方 0 張手牌，先抽卡最多 3 張；出牌立即結束回合。');sync();render()}
 function startAI(){aiMode=true;role='host';roomId='AI';if(peer)peer.destroy();peer=null;conn=null;const d1=newDeck(),d2=newDeck();state={turn:'host',lp:{host:2000,guest:2000},hands:{host:[],guest:[]},decks:{host:d1,decks:[],guest:d2},active:{host:null,guest:null},energy:{host:0,guest:0},buff:{host:1,guest:1},def:{host:1,guest:1},drawUsed:{host:0,guest:0},gameOver:false};delete state.decks.decks;selected=-1;setStatus('🤖 AI 對戰｜你先手');log('AI 對戰開始：雙方 0 張手牌，你先抽卡。');render()}
